@@ -400,6 +400,37 @@ body {
   box-shadow: 0 0 15px rgba(255, 0, 127, 0.35);
 }
 
+/* Benefit Selector dropdown */
+.benefit-select {
+  width: 100%;
+  padding: 9px 12px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition-fast);
+}
+.theme-neon .benefit-select {
+  border-color: rgba(255, 255, 255, 0.05);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+}
+.benefit-select:focus {
+  border-color: var(--accent-color);
+}
+.theme-neon .benefit-select:focus {
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.35);
+}
+.benefit-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Action Controls Buttons */
 .controls {
   display: grid;

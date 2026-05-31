@@ -22,6 +22,7 @@ let scores = { black: 0, white: 0 };
 let currentTheme = 'wood';
 let timeLeft = TURN_LIMIT;
 let timerInterval = null;
+let benefitMoves = 0; // Number of extra stones the first player can place on turn 1
 
 // Procedural wood grain random seeds
 const woodGrains = [];
@@ -172,6 +173,7 @@ const btnUndo = document.getElementById('btn-undo');
 const btnReset = document.getElementById('btn-reset');
 const btnThemeWood = document.getElementById('btn-theme-wood');
 const btnThemeNeon = document.getElementById('btn-theme-neon');
+const selectBenefit = document.getElementById('select-benefit');
 
 // Modals
 const victoryModal = document.getElementById('victory-modal');
@@ -701,8 +703,12 @@ function placeStone(x, y) {
   if (isWin) {
     triggerVictory(isWin);
   } else {
-    // Toggle active player
-    currentPlayer = currentPlayer === 1 ? 2 : 1;
+    // Determine next player based on starting advantage benefit
+    if (history.length < 1 + benefitMoves) {
+      currentPlayer = 1; // Keep turn as Black for benefit placements
+    } else {
+      currentPlayer = currentPlayer === 1 ? 2 : 1; // Alternate turns normally
+    }
     updateUIControls();
     startTimer(); // Reset and start turn countdown for the next player!
     draw();
@@ -791,6 +797,11 @@ function updateUIControls() {
   
   // Disable undo button if move history is empty or game over
   btnUndo.disabled = history.length === 0;
+  
+  // Disable benefit selection dropdown if game has started
+  if (selectBenefit) {
+    selectBenefit.disabled = history.length > 0;
+  }
 }
 
 // Reset Game board parameters
@@ -835,8 +846,12 @@ function undoMove() {
   const lastMove = history.pop();
   board[lastMove.y][lastMove.x] = 0;
   
-  // Set turn to player who made that move
-  currentPlayer = lastMove.player;
+  // Set turn to correct player taking benefit into account
+  if (history.length < 1 + benefitMoves) {
+    currentPlayer = 1;
+  } else {
+    currentPlayer = lastMove.player;
+  }
   
   updateUIControls();
   startTimer(); // Restart turn countdown for the reverted active player!
@@ -877,6 +892,14 @@ btnThemeNeon.addEventListener('click', () => {
     draw();
   }
 });
+
+// Benefit Selector change listener
+if (selectBenefit) {
+  selectBenefit.addEventListener('change', (e) => {
+    benefitMoves = parseInt(e.target.value) || 0;
+    resetGame(false); // Restart game with new advantage settings
+  });
+}
 
 // Main execution bootstrapping
 updateUIControls();
