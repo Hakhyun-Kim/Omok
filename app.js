@@ -8,6 +8,7 @@ const LOGICAL_SIZE = 600;
 const PADDING = 38;
 const CELL_SPACING = (LOGICAL_SIZE - 2 * PADDING) / (BOARD_SIZE - 1);
 const STONE_RADIUS = CELL_SPACING * 0.44;
+const TURN_LIMIT = 30; // 30 seconds countdown (초읽기)
 
 // 2. Game State variables
 let board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(0));
@@ -19,6 +20,8 @@ let activePreview = { x: -1, y: -1 };
 let isDrawing = false;
 let scores = { black: 0, white: 0 };
 let currentTheme = 'wood';
+let timeLeft = TURN_LIMIT;
+let timerInterval = null;
 
 // Procedural wood grain random seeds
 const woodGrains = [];
@@ -44,6 +47,33 @@ function initAudio() {
   }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
+  }
+}
+
+/**
+ * Synthesizes a synthetic warning beep for turn timer count downs.
+ */
+function playWarningBeep(isUrgent = false) {
+  try {
+    initAudio();
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(isUrgent ? 1200 : 800, now);
+    
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(isUrgent ? 0.2 : 0.15, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start(now);
+    osc.stop(now + 0.1);
+  } catch (e) {
+    console.warn("Warning beep failed:", e);
   }
 }
 
@@ -149,6 +179,84 @@ const victoryTitle = document.getElementById('victory-title');
 const victoryMessage = document.getElementById('victory-message');
 const statMoves = document.getElementById('stat-moves');
 const btnModalRestart = document.getElementById('btn-modal-restart');
+
+// Timer elements
+const countdownValEl = document.getElementById('countdown-val');
+const timerProgressEl = document.getElementById('timer-progress');
+const timerIconEl = document.querySelector('.timer-icon');
+
+// Timer Logic Functions
+function startTimer() {
+  stopTimer();
+  timeLeft = TURN_LIMIT;
+  updateTimerUI();
+  
+  timerInterval = setInterval(() => {
+    if (!gameActive) {
+      stopTimer();
+      return;
+    }
+    
+    timeLeft--;
+    updateTimerUI();
+    
+    // Play a warning ticking beep at 5, 4, 3, 2, 1 seconds
+    if (timeLeft <= 5 && timeLeft > 0) {
+      playWarningBeep(timeLeft <= 2);
+    }
+    
+    if (timeLeft <= 0) {
+      handleTimeout();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function updateTimerUI() {
+  countdownValEl.textContent = timeLeft;
+  const percentage = (timeLeft / TURN_LIMIT) * 100;
+  timerProgressEl.style.width = `${percentage}%`;
+  
+  if (timeLeft <= 5) {
+    countdownValEl.classList.add('danger');
+    timerProgressEl.classList.add('danger');
+    timerIconEl.classList.add('ticking');
+  } else {
+    countdownValEl.classList.remove('danger');
+    timerProgressEl.classList.remove('danger');
+    timerIconEl.classList.remove('ticking');
+  }
+}
+
+function handleTimeout() {
+  stopTimer();
+  gameActive = false;
+  
+  // The player who timed out loses! The other player wins.
+  const winningPlayer = currentPlayer === 1 ? 2 : 1;
+  
+  if (winningPlayer === 1) {
+    scores.black++;
+    victoryTitle.textContent = "흑돌 승리! (시간 초과)";
+    victoryMessage.textContent = "백돌(White)의 생각 시간이 초과되어 흑돌이 시간승 하였습니다.";
+  } else {
+    scores.white++;
+    victoryTitle.textContent = "백돌 승리! (시간 초과)";
+    victoryMessage.textContent = "흑돌(Black)의 생각 시간이 초과되어 백돌이 시간승 하였습니다.";
+  }
+  saveScores();
+  
+  statMoves.textContent = history.length;
+  setTimeout(() => {
+    victoryModal.classList.add('active');
+  }, 750);
+}
 
 // Initialize Scores from LocalStorage
 function loadScores() {
@@ -596,6 +704,7 @@ function placeStone(x, y) {
     // Toggle active player
     currentPlayer = currentPlayer === 1 ? 2 : 1;
     updateUIControls();
+    startTimer(); // Reset and start turn countdown for the next player!
     draw();
   }
 }
@@ -644,6 +753,7 @@ function checkWin(x, y) {
 
 // Transition game state to victory
 function triggerVictory(lineCoordinates) {
+  stopTimer(); // Stop turn countdown immediately!
   gameActive = false;
   winningLine = lineCoordinates;
   draw();
@@ -685,6 +795,7 @@ function updateUIControls() {
 
 // Reset Game board parameters
 function resetGame(fullResetScores = false) {
+  stopTimer();
   board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(0));
   currentPlayer = 1;
   history = [];
@@ -700,6 +811,7 @@ function resetGame(fullResetScores = false) {
   
   victoryModal.classList.remove('active');
   updateUIControls();
+  startTimer(); // Restart countdown for Black who goes first!
   draw();
 }
 
@@ -727,6 +839,7 @@ function undoMove() {
   currentPlayer = lastMove.player;
   
   updateUIControls();
+  startTimer(); // Restart turn countdown for the reverted active player!
   draw();
 }
 
@@ -767,4 +880,5 @@ btnThemeNeon.addEventListener('click', () => {
 
 // Main execution bootstrapping
 updateUIControls();
+startTimer(); // Start turn countdown for Black on page load!
 draw();
