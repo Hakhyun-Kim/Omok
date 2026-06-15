@@ -38,7 +38,15 @@ let gridGroup = null;
 let stonesGroup = null;
 let previewMesh = null;
 let winningLineGroup = null;
+let lastMoveMarker = null;
 let isDrawing = false;
+let activePointers = new Map();
+let isPinching = false;
+let lastPinchDistance = 0;
+const minCameraDistance = 6;
+const maxCameraDistance = 28;
+const pinchZoomSpeed = 0.03;
+const wheelZoomSpeed = 0.03;
 
 let audioCtx = null;
 
@@ -59,6 +67,9 @@ const btnModalRestart = document.getElementById('btn-modal-restart');
 const countdownValEl = document.getElementById('countdown-val');
 const timerProgressEl = document.getElementById('timer-progress');
 const timerIconEl = document.querySelector('.timer-icon');
+const turnCenterHint = document.getElementById('turn-center-hint');
+const turnCenterHintText = document.getElementById('turn-center-hint-text');
+let turnHintTimeout = null;
 
 function initAudio() {
   if (!audioCtx) {
@@ -213,10 +224,10 @@ function buildGridLines(themeName) {
     opacity: themeName === 'neon' ? 0.75 : 0.65,
   });
   const grid = new THREE.Group();
+  const lineHeight = 0.03;
 
   for (let i = 0; i < BOARD_SIZE; i++) {
     const position = i - BOARD_HALF;
-    const lineHeight = 0.03;
     const horizontal = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(-BOARD_HALF, lineHeight, position),
       new THREE.Vector3(BOARD_HALF, lineHeight, position),
@@ -239,7 +250,7 @@ function buildGridLines(themeName) {
     for (let col of [3, 7, 11]) {
       const star = new THREE.Mesh(new THREE.CircleGeometry(0.12, 16), starMaterial);
       star.rotation.x = -Math.PI / 2;
-      star.position.set(col - BOARD_HALF, 0.23, row - BOARD_HALF);
+      star.position.set(col - BOARD_HALF, lineHeight, row - BOARD_HALF);
       grid.add(star);
     }
   }
@@ -261,6 +272,37 @@ function addStoneMesh(x, y, player) {
   mesh.position.set(x - BOARD_HALF, STONE_HEIGHT / 2, y - BOARD_HALF);
   mesh.userData = { gridX: x, gridY: y };
   stonesGroup.add(mesh);
+}
+
+function createLastMoveMarker() {
+  const geometry = new THREE.TorusGeometry(STONE_RADIUS * 1.12, 0.035, 16, 64);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xfff176,
+    emissive: 0xfff176,
+    emissiveIntensity: 0.8,
+    transparent: true,
+    opacity: 0.85,
+    metalness: 0.25,
+    roughness: 0.15,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.x = Math.PI / 2;
+  mesh.receiveShadow = false;
+  mesh.castShadow = false;
+  return mesh;
+}
+
+function updateLastMoveMarker(x, y) {
+  if (lastMoveMarker) {
+    scene.remove(lastMoveMarker);
+    lastMoveMarker.geometry.dispose();
+    lastMoveMarker.material.dispose();
+    lastMoveMarker = null;
+  }
+  if (x == null || y == null) return;
+  lastMoveMarker = createLastMoveMarker();
+  lastMoveMarker.position.set(x - BOARD_HALF, STONE_HEIGHT * 0.6, y - BOARD_HALF);
+  scene.add(lastMoveMarker);
 }
 
 function removeStoneMesh(x, y) {
@@ -376,6 +418,20 @@ function getBoardIntersection(clientX, clientY) {
   return intersects.length > 0 ? intersects[0] : null;
 }
 
+function getPointerDistance(p1, p2) {
+  return Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+}
+
+function updateCameraZoom(delta) {
+  const direction = camera.position.clone().normalize();
+  const currentDistance = camera.position.length();
+  let targetDistance = currentDistance + delta;
+  targetDistance = Math.min(Math.max(targetDistance, minCameraDistance), maxCameraDistance);
+  camera.position.copy(direction.multiplyScalar(targetDistance));
+  camera.lookAt(0, 0, 0);
+  draw();
+}
+
 function setPreviewPosition(gridX, gridY) {
   previewMesh.position.set(gridX - BOARD_HALF, STONE_HEIGHT / 2 + 0.02, gridY - BOARD_HALF);
   previewMesh.visible = true;
@@ -459,7 +515,7 @@ function handleTimeout() {
   gameActive = false;
   const winningPlayer = currentPlayer === 1 ? 2 : 1;
   lastMatchWinner = winningPlayer;
-  nextFirstPlayer = currentPlayer;
+  nextFirstPlayer = getNextFirstPlayerAfterMatch(winningPlayer);
   if (winningPlayer === 1) {
     scores.black++;
     victoryTitle.textContent = '흑돌 승리! (시간 초과)';
@@ -493,6 +549,13 @@ function saveScores() {
   scoreWhiteEl.textContent = scores.white;
 }
 
+function getNextFirstPlayerAfterMatch(winner) {
+  if (benefitMoves === 0) {
+    return winner === 1 ? 2 : 1;
+  }
+  return 1;
+}
+
 function clearStones() {
   while (stonesGroup.children.length > 0) {
     const mesh = stonesGroup.children[0];
@@ -500,12 +563,14 @@ function clearStones() {
     mesh.geometry.dispose();
     mesh.material.dispose();
   }
+  updateLastMoveMarker(null, null);
 }
 
 function placeStone(x, y) {
   board[y][x] = currentPlayer;
   history.push({ x, y, player: currentPlayer });
   addStoneMesh(x, y, currentPlayer);
+  updateLastMoveMarker(x, y);
   playStoneSound(currentPlayer === 2);
   const isWin = checkWin(x, y);
   if (isWin) {
@@ -559,7 +624,7 @@ function triggerVictory(lineCoordinates) {
   draw();
   const winner = board[lineCoordinates[0].y][lineCoordinates[0].x];
   lastMatchWinner = winner;
-  nextFirstPlayer = winner === 1 ? 2 : 1;
+  nextFirstPlayer = getNextFirstPlayerAfterMatch(winner);
   if (winner === 1) {
     scores.black++;
     victoryTitle.textContent = '흑돌 승리!';
@@ -574,12 +639,31 @@ function triggerVictory(lineCoordinates) {
   setTimeout(() => victoryModal.classList.add('active'), 750);
 }
 
+function showTurnCenterHint(message) {
+  if (!turnCenterHint || !turnCenterHintText) return;
+  if (turnHintTimeout) {
+    clearTimeout(turnHintTimeout);
+  }
+  turnCenterHintText.textContent = message;
+  turnCenterHint.classList.add('active');
+  turnHintTimeout = setTimeout(() => {
+    turnCenterHint.classList.remove('active');
+    turnHintTimeout = null;
+  }, 1800);
+}
+
+function showCurrentTurnCenterHint() {
+  if (!gameActive) return;
+  showTurnCenterHint(`${currentPlayer === 1 ? '흑돌' : '백돌'} 차례`);
+}
+
 function updateUIControls() {
   currentTurnEl.textContent = currentPlayer === 1 ? '흑돌' : '백돌';
   btnUndo.disabled = history.length === 0;
   if (selectBenefit) {
     selectBenefit.disabled = history.length > 0;
   }
+  showCurrentTurnCenterHint();
 }
 
 function resetGame(fullResetScores = false) {
@@ -619,6 +703,12 @@ function undoMove() {
   const lastMove = history.pop();
   board[lastMove.y][lastMove.x] = 0;
   removeStoneMesh(lastMove.x, lastMove.y);
+  if (history.length > 0) {
+    const previousMove = history[history.length - 1];
+    updateLastMoveMarker(previousMove.x, previousMove.y);
+  } else {
+    updateLastMoveMarker(null, null);
+  }
   if (history.length < 1 + benefitMoves) {
     currentPlayer = starterPlayer;
   } else {
@@ -632,13 +722,43 @@ function undoMove() {
 canvas.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   canvas.setPointerCapture(e.pointerId);
-  isDrawing = true;
-  initAudio();
-  handlePointerInput(e.clientX, e.clientY, false);
+  activePointers.set(e.pointerId, e);
+
+  if (activePointers.size === 2) {
+    isPinching = true;
+    const pointers = Array.from(activePointers.values());
+    lastPinchDistance = getPointerDistance(pointers[0], pointers[1]);
+    isDrawing = false;
+    clearPreview();
+    return;
+  }
+
+  if (!isPinching) {
+    isDrawing = true;
+    initAudio();
+    handlePointerInput(e.clientX, e.clientY, false);
+  }
 });
 
 canvas.addEventListener('pointermove', (e) => {
   e.preventDefault();
+  if (!activePointers.has(e.pointerId)) return;
+  activePointers.set(e.pointerId, e);
+
+  if (activePointers.size === 2) {
+    isPinching = true;
+    const pointers = Array.from(activePointers.values());
+    const currentDistance = getPointerDistance(pointers[0], pointers[1]);
+    const delta = (lastPinchDistance - currentDistance) * pinchZoomSpeed;
+    updateCameraZoom(delta);
+    lastPinchDistance = currentDistance;
+    return;
+  }
+
+  if (isPinching) {
+    return;
+  }
+
   if (isDrawing) {
     handlePointerInput(e.clientX, e.clientY, false);
   } else {
@@ -648,6 +768,15 @@ canvas.addEventListener('pointermove', (e) => {
 
 canvas.addEventListener('pointerup', (e) => {
   e.preventDefault();
+  if (activePointers.has(e.pointerId)) {
+    activePointers.delete(e.pointerId);
+  }
+
+  if (activePointers.size < 2) {
+    isPinching = false;
+    lastPinchDistance = 0;
+  }
+
   if (isDrawing) {
     isDrawing = false;
     canvas.releasePointerCapture(e.pointerId);
@@ -657,14 +786,22 @@ canvas.addEventListener('pointerup', (e) => {
 
 canvas.addEventListener('pointerleave', () => {
   isDrawing = false;
+  isPinching = false;
   clearPreview();
   draw();
 });
 
 canvas.addEventListener('pointercancel', () => {
   isDrawing = false;
+  isPinching = false;
   clearPreview();
   draw();
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY * wheelZoomSpeed * 0.1;
+  updateCameraZoom(delta);
 });
 
 btnUndo.addEventListener('click', undoMove);

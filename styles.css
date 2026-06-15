@@ -165,6 +165,7 @@ body {
 }
 
 .board-wrapper {
+  position: relative;
   background: transparent;
   padding: 6px;
   border-radius: var(--border-radius-lg);
@@ -191,6 +192,41 @@ body {
   border-radius: 18px;
   touch-action: none;
   display: block;
+}
+
+.turn-center-hint {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -108%);
+  pointer-events: none;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(21, 21, 21, 0.48);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.24s ease, transform 0.24s ease;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+}
+
+.theme-wood .turn-center-hint {
+  background: rgba(35, 23, 10, 0.88);
+}
+
+.theme-neon .turn-center-hint {
+  background: rgba(5, 15, 35, 0.92);
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.18);
+}
+
+.turn-center-hint.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 /* Brand Section */
