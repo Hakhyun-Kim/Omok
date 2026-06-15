@@ -18,113 +18,59 @@
 </head>
 <body class="theme-wood">
   <div class="app-container">
-    
-    <!-- Left/Top Dashboard Section -->
-    <header class="dashboard">
-      <div class="brand">
-        <div class="logo-mark">
-          <span class="dot black"></span>
-          <span class="dot white"></span>
-        </div>
-        <h1>Premium Omok</h1>
-        <p class="subtitle">오목 (五目)</p>
-      </div>
-
-      <!-- Sleek Turn Timer -->
-      <div class="timer-card" id="turn-timer">
-        <div class="timer-header">
-          <span class="timer-icon"><i class="fa-solid fa-hourglass-half"></i></span>
-          <span class="timer-label">생각 시간 (초읽기)</span>
-        </div>
-        <div class="timer-main">
-          <span class="timer-countdown" id="countdown-val">30</span>
-          <span class="timer-unit">초</span>
-        </div>
-        <div class="timer-bar-wrapper">
-          <div class="timer-bar" id="timer-progress"></div>
-        </div>
-      </div>
-
-      <!-- Scoreboard with elegant state indications -->
-      <div class="scoreboard">
-        <div class="player-card active" id="player-black">
-          <div class="avatar-ring">
-            <div class="stone-avatar black"></div>
+    <main class="board-area">
+      <div class="game-topbar">
+        <div class="timer-card" id="turn-timer">
+          <div class="timer-header">
+            <span class="timer-icon"><i class="fa-solid fa-hourglass-half"></i></span>
+            <span class="timer-label">생각 시간 (초읽기)</span>
           </div>
-          <div class="player-info">
-            <span class="player-label">흑돌 (Black)</span>
-            <span class="player-score" id="score-black">0</span>
+          <div class="timer-main">
+            <span class="timer-countdown" id="countdown-val">30</span>
+            <span class="timer-unit">초</span>
           </div>
-          <div class="turn-indicator">PLAYING</div>
+          <div class="timer-bar-wrapper">
+            <div class="timer-bar" id="timer-progress"></div>
+          </div>
         </div>
-        
-        <div class="player-card" id="player-white">
-          <div class="avatar-ring">
-            <div class="stone-avatar white"></div>
+
+        <div class="status-card">
+          <div class="status-item">
+            <span class="status-label">현재 차례</span>
+            <strong class="status-value" id="current-turn">흑돌</strong>
           </div>
-          <div class="player-info">
-            <span class="player-label">백돌 (White)</span>
-            <span class="player-score" id="score-white">0</span>
+          <div class="status-item score-line">
+            <span class="status-label">스코어</span>
+            <span class="score-value"><strong id="score-black">0</strong> : <strong id="score-white">0</strong></span>
           </div>
-          <div class="turn-indicator">PLAYING</div>
         </div>
       </div>
 
-      <!-- Settings and Game Customization -->
-      <div class="settings-group">
-        <span class="section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> 테마 설정</span>
-        <div class="theme-selector">
-          <button class="theme-btn active" data-theme="wood" id="btn-theme-wood">
-            <i class="fa-solid fa-tree"></i> 클래식 우드
-          </button>
-          <button class="theme-btn" data-theme="neon" id="btn-theme-neon">
-            <i class="fa-solid fa-circle-half-stroke"></i> 사이버 네온
-          </button>
-        </div>
+      <div class="board-wrapper">
+        <canvas id="omok-canvas" width="600" height="600"></canvas>
       </div>
 
-      <!-- Benefit settings option -->
-      <div class="settings-group">
-        <span class="section-title"><i class="fa-solid fa-gift"></i> 선공 베네핏 설정</span>
-        <div class="benefit-selector">
-          <select id="select-benefit" class="benefit-select" title="선공 베네핏 설정">
-            <option value="0" selected>기본 오목 (베네핏 없음)</option>
-            <option value="1">선공 1개 추가 착수 (총 2수)</option>
-            <option value="2">선공 2개 추가 착수 (총 3수)</option>
-            <option value="3">선공 3개 추가 착수 (총 4수)</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Game Actions Controls -->
-      <div class="controls">
+      <div class="controls-row">
         <button id="btn-undo" class="control-btn" title="한 수 무르기" disabled>
           <i class="fa-solid fa-rotate-left"></i> 무르기
         </button>
         <button id="btn-reset" class="control-btn warning" title="게임 초기화">
           <i class="fa-solid fa-arrows-rotate"></i> 새 게임
         </button>
-      </div>
-
-      <!-- Utility / Instruction note -->
-      <div class="help-card">
-        <h3><i class="fa-solid fa-circle-question"></i> 터치 이용 안내</h3>
-        <p>화면을 터치하거나 마우스로 클릭하여 바둑판의 교차점에 돌을 놓을 수 있습니다. 손가락 터치 시 가장 가까운 빈 눈금에 정확하게 스냅됩니다.</p>
-      </div>
-      
-      <!-- Footer Copyright -->
-      <footer class="footer">
-        <p>Antigravity Studio &copy; 2026</p>
-      </footer>
-    </header>
-
-    <!-- Right/Bottom Board Section -->
-    <main class="board-area">
-      <div class="board-wrapper">
-        <canvas id="omok-canvas" width="600" height="600"></canvas>
+        <button id="btn-theme-wood" class="control-btn active" title="클래식 우드 테마">
+          <i class="fa-solid fa-tree"></i> 클래식
+        </button>
+        <button id="btn-theme-neon" class="control-btn" title="사이버 네온 테마">
+          <i class="fa-solid fa-circle-half-stroke"></i> 네온
+        </button>
+        <select id="select-benefit" class="benefit-select" title="선공 베네핏 설정">
+          <option value="0" selected>기본 오목</option>
+          <option value="1">베네핏 1</option>
+          <option value="2">베네핏 2</option>
+          <option value="3">베네핏 3</option>
+        </select>
       </div>
     </main>
-
   </div>
 
   <!-- Win Announcement Overlay Modal -->
@@ -149,6 +95,7 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="three.min.js"></script>
+  <script src="app3d.js"></script>
 </body>
 </html>

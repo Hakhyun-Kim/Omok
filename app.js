@@ -4,13 +4,17 @@
 
 // 1. Constants and Settings
 const BOARD_SIZE = 15;
-const LOGICAL_SIZE = 600;
-const PADDING = 38;
-const CELL_SPACING = (LOGICAL_SIZE - 2 * PADDING) / (BOARD_SIZE - 1);
-const STONE_RADIUS = CELL_SPACING * 0.44;
+const BOARD_REAL_SIZE = BOARD_SIZE - 1;
+const BOARD_HALF = BOARD_REAL_SIZE / 2;
+const STONE_RADIUS = 0.42;
+const STONE_HEIGHT = 0.16;
 const TURN_LIMIT = 30; // 30 seconds countdown (초읽기)
 
-// 2. Game State variables
+const BOARD_COLORS = {
+  wood: { top: 0xdfb275, side: 0xc99454, line: 0x3e2d1b, emissive: 0x000000, ambient: 0x92714d },
+  neon: { top: 0x101018, side: 0x0b0b13, line: 0x00f0ff, emissive: 0x002d47, ambient: 0x0a1e2f }
+};
+
 let board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(0));
 let currentPlayer = 1; // 1 = Black, 2 = White
 let history = [];
@@ -24,21 +28,247 @@ let timeLeft = TURN_LIMIT;
 let timerInterval = null;
 let benefitMoves = 0; // Number of extra stones the first player can place on turn 1
 
-// Procedural wood grain random seeds
-const woodGrains = [];
-function initWoodGrains() {
-  woodGrains.length = 0;
-  for (let i = 0; i < 8; i++) {
-    woodGrains.push({
-      yOffset: Math.random() * 200 - 100,
-      amplitude: Math.random() * 30 + 10,
-      freq: Math.random() * 0.003 + 0.001,
-      lineWidth: Math.random() * 2 + 1,
-      opacity: Math.random() * 0.04 + 0.02
-    });
+let renderer = null;
+let scene = null;
+let camera = null;
+let raycaster = null;
+let boardMesh = null;
+let boardPlane = null;
+let gridGroup = null;
+let stonesGroup = null;
+let previewMesh = null;
+let winningLineGroup = null;
+
+function createBoardMaterial(themeName) {
+  const palette = BOARD_COLORS[themeName];
+  return new THREE.MeshPhysicalMaterial({
+    color: palette.top,
+    emissive: palette.emissive,
+    roughness: themeName === 'wood' ? 0.92 : 0.14,
+    metalness: themeName === 'wood' ? 0.05 : 0.35,
+    clearcoat: themeName === 'wood' ? 0.36 : 0.7,
+    clearcoatRoughness: 0.45,
+    reflectivity: themeName === 'neon' ? 0.35 : 0.08,
+  });
+}
+
+function createBoardMesh(themeName) {
+  const geometry = new THREE.BoxGeometry(BOARD_REAL_SIZE + 0.5, 0.4, BOARD_REAL_SIZE + 0.5);
+  const mesh = new THREE.Mesh(geometry, createBoardMaterial(themeName));
+  mesh.receiveShadow = true;
+  mesh.position.y = -0.2;
+  return mesh;
+}
+
+function buildGridLines(themeName) {
+  const palette = BOARD_COLORS[themeName];
+  const material = new THREE.LineBasicMaterial({ color: palette.line, transparent: true, opacity: themeName === 'neon' ? 0.75 : 0.65 });
+  const grid = new THREE.Group();
+
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    const position = i - BOARD_HALF;
+    const horizontal = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-BOARD_HALF, 0.22, position),
+      new THREE.Vector3(BOARD_HALF, 0.22, position)
+    ]);
+    const vertical = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(position, 0.22, -BOARD_HALF),
+      new THREE.Vector3(position, 0.22, BOARD_HALF)
+    ]);
+    grid.add(new THREE.Line(horizontal, material));
+    grid.add(new THREE.Line(vertical, material));
+  }
+
+  const starMaterial = new THREE.MeshBasicMaterial({ color: palette.line, transparent: true, opacity: themeName === 'neon' ? 0.9 : 0.8 });
+  for (let row of [3, 7, 11]) {
+    for (let col of [3, 7, 11]) {
+      const star = new THREE.Mesh(new THREE.CircleGeometry(0.12, 16), starMaterial);
+      star.rotation.x = -Math.PI / 2;
+      star.position.set(col - BOARD_HALF, 0.23, row - BOARD_HALF);
+      grid.add(star);
+    }
+  }
+
+  return grid;
+}
+
+function createStoneMesh(player) {
+  const geometry = new THREE.CylinderGeometry(STONE_RADIUS, STONE_RADIUS, STONE_HEIGHT, 48);
+  const material = new THREE.MeshStandardMaterial({
+    color: player === 1 ? 0x111111 : 0xf8f8f2,
+    emissive: player === 1 ? 0x202020 : 0x111111,
+    roughness: player === 1 ? 0.24 : 0.35,
+    metalness: player === 1 ? 0.22 : 0.08,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function createPreviewMesh() {
+  const geometry = new THREE.CylinderGeometry(STONE_RADIUS * 1.05, STONE_RADIUS * 1.05, STONE_HEIGHT * 0.45, 32);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.28,
+    emissive: 0xffffff,
+    emissiveIntensity: 0.45,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.visible = false;
+  mesh.receiveShadow = false;
+  mesh.castShadow = false;
+  return mesh;
+}
+
+function createBoardPlane() {
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(BOARD_REAL_SIZE, BOARD_REAL_SIZE),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  plane.rotation.x = -Math.PI / 2;
+  plane.position.y = 0.02;
+  return plane;
+}
+
+function addStoneMesh(x, y, player) {
+  const mesh = createStoneMesh(player);
+  mesh.position.set(x - BOARD_HALF, STONE_HEIGHT / 2, y - BOARD_HALF);
+  mesh.userData = { gridX: x, gridY: y };
+  stonesGroup.add(mesh);
+}
+
+function removeStoneMesh(x, y) {
+  const index = stonesGroup.children.findIndex((mesh) => mesh.userData.gridX === x && mesh.userData.gridY === y);
+  if (index !== -1) {
+    const removed = stonesGroup.children[index];
+    stonesGroup.remove(removed);
+    removed.geometry.dispose();
+    removed.material.dispose();
   }
 }
-initWoodGrains();
+
+function updateWinningLineMesh() {
+  winningLineGroup.clear();
+  if (winningLine.length === 0) return;
+
+  const points = winningLine.map((point) => new THREE.Vector3(point.x - BOARD_HALF, 0.26, point.y - BOARD_HALF));
+  const material = new THREE.LineBasicMaterial({
+    color: board[winningLine[0].y][winningLine[0].x] === 1 ? 0x00f0ff : 0xff007f,
+    transparent: true,
+    opacity: 0.9,
+  });
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const line = new THREE.Line(geometry, material);
+  winningLineGroup.add(line);
+
+  for (let point of points) {
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.14, 16, 16),
+      new THREE.MeshBasicMaterial({ color: material.color, transparent: true, opacity: 0.4 })
+    );
+    glow.position.copy(point);
+    winningLineGroup.add(glow);
+  }
+}
+
+function init3DScene() {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  scene = new THREE.Scene();
+  scene.background = null;
+
+  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 18, 19);
+  camera.lookAt(0, 0, 0);
+
+  const ambient = new THREE.HemisphereLight(0xffffff, 0x222222, 0.75);
+  scene.add(ambient);
+
+  const directional = new THREE.DirectionalLight(0xffffff, 0.85);
+  directional.position.set(8, 22, 14);
+  directional.castShadow = false;
+  scene.add(directional);
+
+  boardMesh = createBoardMesh(currentTheme);
+  scene.add(boardMesh);
+
+  boardPlane = createBoardPlane();
+  scene.add(boardPlane);
+
+  gridGroup = buildGridLines(currentTheme);
+  scene.add(gridGroup);
+
+  stonesGroup = new THREE.Group();
+  scene.add(stonesGroup);
+
+  previewMesh = createPreviewMesh();
+  scene.add(previewMesh);
+
+  winningLineGroup = new THREE.Group();
+  scene.add(winningLineGroup);
+
+  raycaster = new THREE.Raycaster();
+  resizeCanvas();
+  animate();
+}
+
+function updateSceneTheme() {
+  if (!boardMesh || !gridGroup) return;
+  boardMesh.material.dispose();
+  boardMesh.material = createBoardMaterial(currentTheme);
+
+  scene.remove(gridGroup);
+  gridGroup = buildGridLines(currentTheme);
+  scene.add(gridGroup);
+}
+
+function setPreviewPosition(gridX, gridY) {
+  const x = gridX - BOARD_HALF;
+  const z = gridY - BOARD_HALF;
+  previewMesh.position.set(x, STONE_HEIGHT * 0.5 + 0.02, z);
+  previewMesh.visible = true;
+}
+
+function clearPreview() {
+  previewMesh.visible = false;
+}
+
+function renderScene() {
+  if (!renderer || !scene || !camera) return;
+  renderer.render(scene, camera);
+}
+
+function draw() {
+  updateWinningLineMesh();
+  renderScene();
+}
+
+function resizeCanvas() {
+  const displayWidth = Math.max(canvas.clientWidth, 200);
+  const displayHeight = Math.max(canvas.clientHeight, 200);
+  const dpr = window.devicePixelRatio || 1;
+  renderer.setSize(displayWidth * dpr, displayHeight * dpr, false);
+  camera.aspect = displayWidth / displayHeight;
+  camera.updateProjectionMatrix();
+  renderScene();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderScene();
+}
+
+const resizeObserver = new ResizeObserver(() => {
+  resizeCanvas();
+});
+resizeObserver.observe(canvas);
 
 // 3. Audio Context & Synthesizer (Web Audio API)
 let audioCtx = null;
