@@ -174,9 +174,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(100vw - 24px, 980px);
-  height: min(calc(100vh - 140px), 100vw - 24px);
-  min-height: 520px;
+  width: min(100vw - 24px, calc(100vh - 170px), 980px);
+  height: min(100vw - 24px, calc(100vh - 170px), 980px);
+  min-width: 320px;
+  min-height: 320px;
   aspect-ratio: 1 / 1;
   transition: var(--transition-smooth);
 }

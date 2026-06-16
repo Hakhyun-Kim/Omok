@@ -66,6 +66,9 @@
         <button id="btn-theme-neon" class="control-btn" title="사이버 네온 테마">
           <i class="fa-solid fa-circle-half-stroke"></i> 네온
         </button>
+        <button id="btn-view-mode" class="control-btn" title="화면 모드 전환 (2D/3D)">
+          <i class="fa-solid fa-cube"></i> <span id="btn-view-mode-text">3D 모드</span>
+        </button>
         <select id="select-benefit" class="benefit-select" title="선공 베네핏 설정">
           <option value="0" selected>기본 오목</option>
           <option value="1">베네핏 1</option>
@@ -98,7 +101,38 @@
     </div>
   </div>
 
-  <script src="three.min.js"></script>
-  <script src="app3d.js"></script>
+  <script>
+    (function() {
+      const viewMode = localStorage.getItem('omok_view_mode_v2') || '2d';
+      const toggleBtnText = document.getElementById('btn-view-mode-text');
+      const toggleBtn = document.getElementById('btn-view-mode');
+
+      if (viewMode === '3d') {
+        if (toggleBtnText) toggleBtnText.textContent = '2D 모드';
+        const threeScript = document.createElement('script');
+        threeScript.src = 'three.min.js';
+        document.body.appendChild(threeScript);
+        threeScript.onload = () => {
+          const app3dScript = document.createElement('script');
+          app3dScript.src = 'app3d.js';
+          document.body.appendChild(app3dScript);
+        };
+      } else {
+        if (toggleBtnText) toggleBtnText.textContent = '3D 모드';
+        const appScript = document.createElement('script');
+        appScript.src = 'app.js';
+        document.body.appendChild(appScript);
+      }
+
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+          const currentMode = localStorage.getItem('omok_view_mode_v2') || '2d';
+          const nextMode = currentMode === '3d' ? '2d' : '3d';
+          localStorage.setItem('omok_view_mode_v2', nextMode);
+          location.reload();
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
