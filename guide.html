@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Omok - 사용자 가이드 및 게임 설명서</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --font-display: 'Outfit', 'Inter', -apple-system, sans-serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      
+      --bg-dark: #07050f;
+      --bg-card: rgba(22, 18, 38, 0.6);
+      --bg-glow: rgba(0, 240, 255, 0.03);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(0, 240, 255, 0.2);
+      
+      --text-primary: #f3f1f9;
+      --text-secondary: #a29db8;
+      --accent-cyan: #00f0ff;
+      --accent-pink: #ff007f;
+      --accent-amber: #ffaa00;
+      
+      --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #15102a 0%, #080612 70%, #030207 100%);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* Header & Hero */
+    header {
+      text-align: center;
+      padding: 60px 0 40px;
+      position: relative;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, rgba(255, 0, 127, 0.05) 50%, transparent 100%);
+      filter: blur(40px);
+      z-index: -1;
+    }
+
+    .logo-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .logo-icon {
+      font-size: 3rem;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: pulseGlow 3s infinite ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.3)); }
+      50% { filter: drop-shadow(0 0 15px rgba(255, 0, 127, 0.6)); }
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(to right, #ffffff, #dcd8f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 15px;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 30px;
+      font-weight: 300;
+    }
+
+    /* Badges */
+    .badges-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .badge i {
+      font-size: 0.85rem;
+    }
+
+    .badge.html5 { color: #e34f26; border-color: rgba(227, 79, 38, 0.3); }
+    .badge.css3 { color: #1572b6; border-color: rgba(21, 114, 182, 0.3); }
+    .badge.js { color: #f7df1e; border-color: rgba(247, 223, 30, 0.3); }
+    .badge.three { color: #00f0ff; border-color: rgba(0, 240, 255, 0.3); }
+
+    /* Action Buttons */
+    .actions-row {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 50px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      font-family: var(--font-display);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-cyan) 0%, #0099ff 100%);
+      color: #030207;
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 240, 255, 0.45);
+      filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* Main Grid Section */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+      margin-bottom: 50px;
+    }
+
+    @media (max-width: 850px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Glass Card */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 35px;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: var(--transition-smooth);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: transparent;
+      transition: var(--transition-smooth);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      border-color: var(--border-glow);
+      box-shadow: 0 15px 35px rgba(0, 240, 255, 0.1);
+    }
+
+    .card:hover::before {
+      background: linear-gradient(to right, var(--accent-cyan), var(--accent-pink));
+    }
+
+    .card-full {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 850px) {
+      .card-full {
+        grid-column: span 1;
+      }
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      line-height: 50px;
+      text-align: center;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .cyan-icon { color: var(--accent-cyan); background: rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.1); }
+    .pink-icon { color: var(--accent-pink); background: rgba(255, 0, 127, 0.05); border-color: rgba(255, 0, 127, 0.1); }
+    .amber-icon { color: var(--accent-amber); background: rgba(255, 170, 0, 0.05); border-color: rgba(255, 170, 0, 0.1); }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 25px 0 12px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    p {
+      color: var(--text-secondary);
+      font-size: 0.98rem;
+      margin-bottom: 15px;
+    }
+
+    ul, ol {
+      padding-left: 20px;
+      color: var(--text-secondary);
+      margin-bottom: 15px;
+    }
+
+    li {
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    li strong {
+      color: #ffffff;
+    }
+
+    /* Control Keys Table */
+    .controls-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      font-size: 0.9rem;
+    }
+
+    .controls-table th, .controls-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .controls-table th {
+      color: #ffffff;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .controls-table td {
+      color: var(--text-secondary);
+    }
+
+    .key-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      font-family: monospace;
+      color: #ffffff;
+      font-size: 0.85rem;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    /* Warning Callout Box */
+    .callout {
+      background: rgba(255, 170, 0, 0.05);
+      border-left: 4px solid var(--accent-amber);
+      border-radius: 0 12px 12px 0;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .callout p {
+      margin-bottom: 0;
+      font-size: 0.9rem;
+    }
+
+    /* Code Block styling */
+    .code-block {
+      background: #0b0914;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 15px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.88rem;
+      color: #8be9fd;
+      overflow-x: auto;
+      margin: 15px 0;
+    }
+
+    .code-comment {
+      color: #6272a4;
+    }
+
+    .code-keyword {
+      color: #ff79c6;
+    }
+
+    /* Steps list */
+    .steps-list {
+      list-style-type: none;
+      position: relative;
+      padding-left: 25px;
+    }
+
+    .steps-list li {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .steps-list li::before {
+      content: '';
+      position: absolute;
+      left: -25px;
+      top: 4px;
+      width: 14px;
+      height: 14px;
+      background: var(--accent-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-cyan);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 50px 0;
+      color: #5d5870;
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      margin-top: 40px;
+    }
+
+    footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: var(--transition-fast);
+    }
+
+    footer a:hover {
+      color: var(--accent-cyan);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Hero / Header -->
+    <header>
+      <div class="logo-container">
+        <span class="logo-icon"><i class="fa-solid fa-cube"></i></span>
+      </div>
+      <h1>Premium Omok</h1>
+      <p class="subtitle">모바일 터치 스크린과 고사양 웹 환경에 최적화된 하이브리드 2D/3D 오목 웹 게임 설명서</p>
+      
+      <!-- Tech Stack Badges -->
+      <div class="badges-row">
+        <span class="badge html5"><i class="fa-brands fa-html5"></i> HTML5 Canvas</span>
+        <span class="badge css3"><i class="fa-brands fa-css3-alt"></i> Vanilla CSS</span>
+        <span class="badge js"><i class="fa-brands fa-js"></i> Vanilla JS (ES6)</span>
+        <span class="badge three"><i class="fa-solid fa-cubes"></i> Three.js (3D Rendering)</span>
+        <span class="badge"><i class="fa-solid fa-wave-square"></i> Web Audio API Synthesizer</span>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="actions-row">
+        <a href="index.html" class="btn btn-primary"><i class="fa-solid fa-play"></i> 게임 플레이하기</a>
+        <a href="https://github.com/hakhyun-kim/Omok" target="_blank" class="btn btn-secondary"><i class="fa-brands fa-github"></i> GitHub 저장소</a>
+      </div>
+    </header>
+
+    <!-- Main Grid Section -->
+    <div class="grid">
+      
+      <!-- 1. 핵심 기능 (Core Features) -->
+      <div class="card card-full">
+        <div class="card-icon cyan-icon"><i class="fa-solid fa-star"></i></div>
+        <h2>오목의 새로운 차원, 주요 기능 안내</h2>
+        <p>Premium Omok은 일반적인 바둑판 게임을 현대적인 감각과 고급 사운드 기술로 업그레이드한 고품격 웹 앱입니다.</p>
+        
+        <div class="grid" style="margin-top: 25px; margin-bottom: 0;">
+          <div>
+            <h3><i class="fa-solid fa-fingerprint"></i> 드래그 조준 & 스냅 (Pointer Snapping)</h3>
+            <p>손가락 터치 시 누르는 지점이 가려지는 터치 노트북/모바일 특유의 문제를 완전히 해결했습니다. 화면을 터치하여 손가락을 끌면 가장 가까운 눈금선 교차점에 <strong>빛나는 링(Snap Ring)</strong>이 투영되어 표시됩니다. 손가락을 떼는 순간 정확히 착수되어 실수 없는 완벽한 조종이 가능합니다.</p>
+          </div>
+          <div>
+            <h3><i class="fa-solid fa-cube"></i> 2D / 3D 실시간 뷰 전환</h3>
+            <p>언제든 하단 컨트롤러의 <strong>3D 모드 / 2D 모드</strong> 버튼을 누르면 실시간으로 대국 테마가 전환됩니다. Three.js 물리 렌더링에 기반한 입체적인 3D 돌과 입체 바둑판을 원하는 시점과 각도로 자유롭게 바라보며 깊은 몰입감을 느낄 수 있습니다.</p>
+          </div>
+          <div>
+            <h3><i class="fa-solid fa-wave-square"></i> 실시간 소리 합성 (Web Audio API)</h3>
+            <p>사운드 파일의 누락이나 로딩 지연을 방지하기 위해 브라우저 자체 오실레이터를 이용하여 <strong>돌을 놓는 소리를 실시간으로 합성(Procedural Synth)</strong>합니다. 묵직하고 밀도감 있는 흑돌 타격음과 맑게 공명하는 백돌 조개 울림을 완벽하게 재현했습니다.</p>
+          </div>
+          <div>
+            <h3><i class="fa-solid fa-hourglass-half"></i> 30초 생각 시간 & 긴장감 연출</h3>
+            <p>턴마다 30초의 생각 시간이 주어지며, 게이지와 타이머 수치로 줄어드는 시간이 투영됩니다. <strong>5초 이하</strong>로 접어들면 게이지 바가 긴박한 네온 레드로 반짝이며 초당 경고 비프음이 발생합니다. 특히 남은 2초 동안은 더 날카로운 고음역 경보가 구동됩니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 게임 룰 & 특수 기능 -->
+      <div class="card">
+        <div class="card-icon pink-icon"><i class="fa-solid fa-circle-question"></i></div>
+        <h2>게임 규칙 및 조작 가이드</h2>
+        
+        <h3>🏆 기본 규칙</h3>
+        <ul>
+          <li><strong>오목 규칙</strong>: 흑돌과 백돌이 교대로 착수하며, 가로/세로/대각선 방향 중 어느 쪽이든 먼저 자신의 돌 5개를 일렬로 놓으면 승리합니다.</li>
+          <li><strong>전적 기록</strong>: 승리 시 로컬 브라우저 저장소(LocalStorage)에 전적이 영구 보존되어 매 대국 승수가 자동으로 누적됩니다.</li>
+        </ul>
+
+        <h3>🛡️ 선공 베네핏 (Black Starting Advantage)</h3>
+        <p>흑돌(선공)의 압도적인 유리함을 보완하거나 게임의 재미를 위해 첫 턴에 연이어 착수할 수 있는 베네핏 기능을 탑재하고 있습니다.</p>
+        <ul>
+          <li><strong>베네핏 설정(0~3)</strong>: 기본 오목(0) 외에 1~3개의 추가 착수를 첫 턴에 허용합니다. (예: 베네핏 2 설정 시 첫 턴에 흑돌이 연이어 3수 착수 가능)</li>
+          <li>첫 턴에 설정된 돌을 모두 배치하는 즉시 백돌의 차례로 부드럽게 턴이 전환됩니다.</li>
+        </ul>
+      </div>
+
+      <!-- 3. 조작 방법 안내 -->
+      <div class="card">
+        <div class="card-icon amber-icon"><i class="fa-solid fa-gamepad"></i></div>
+        <h2>사용자 컨트롤 인터페이스</h2>
+        
+        <h3>🖱️ 2D 모드 조작</h3>
+        <ul>
+          <li><strong>조준 후 착수</strong>: 화면을 클릭(또는 터치)한 상태로 부드럽게 드래그하여 원하는 교차점에 조준 링이 위치하도록 조정한 뒤, 클릭을 놓으면 착수됩니다.</li>
+          <li><strong>즉시 착수</strong>: 빈 격자 자리를 탭하거나 마우스로 가볍게 클릭해도 즉각적으로 착수할 수 있습니다.</li>
+        </ul>
+
+        <h3>🔮 3D 모드 카메라 조작 (OrbitControls)</h3>
+        <table class="controls-table">
+          <thead>
+            <tr>
+              <th>기능</th>
+              <th>마우스 조작</th>
+              <th>터치스크린 조작</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>회전 (Orbit)</strong></td>
+              <td>마우스 <span class="key-badge">좌클릭</span> 후 드래그</td>
+              <td><span class="key-badge">한 손가락</span> 드래그</td>
+            </tr>
+            <tr>
+              <td><strong>화면 이동 (Pan)</strong></td>
+              <td>마우스 <span class="key-badge">우클릭</span> (또는 Ctrl+좌클릭) 후 드래그</td>
+              <td><span class="key-badge">두 손가락</span> 쓸어넘기기</td>
+            </tr>
+            <tr>
+              <td><strong>줌 인/아웃 (Zoom)</strong></td>
+              <td>마우스 <span class="key-badge">휠 스크롤</span></td>
+              <td><span class="key-badge">두 손가락</span> 핀치(Pinch) 줌</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 4. 실행 및 배포 가이드 (How to Run) -->
+      <div class="card card-full">
+        <div class="card-icon cyan-icon"><i class="fa-solid fa-terminal"></i></div>
+        <h2>내 컴퓨터에서 바로 실행하기 (How to Run & Deploy)</h2>
+        
+        <div class="grid" style="margin-bottom: 0;">
+          <div>
+            <h3>방법 A. 윈도우 런처 이용 (원클릭)</h3>
+            <p>별도의 설정이나 터미널 실행 없이 바로 게임을 켜고 싶을 때 가장 유용한 방법입니다.</p>
+            <ol class="steps-list">
+              <li>GitHub 혹은 다운로드한 폴더 내의 <strong style="color:var(--accent-cyan);">play.bat</strong> 파일을 더블 클릭하여 실행합니다.</li>
+              <li>시스템 기본 브라우저가 열리며 쾌적하게 오목을 즉각 시작할 수 있습니다.</li>
+            </ol>
+          </div>
+          <div>
+            <h3>방법 B. 로컬 웹 서버 실행 (서버 환경 테스트)</h3>
+            <p>보안 사유로 웹 사운드(Web Audio API) 오디오 컨텍스트가 구글 크롬 등 로컬 파일 프로토콜(file://) 하에서 일부 제한될 경우 사용하는 개발자용 가이드입니다.</p>
+            <ol class="steps-list">
+              <li>터미널(Cmd / PowerShell 등)을 실행하여 오목 폴더로 이동합니다.</li>
+              <li>아래의 Node.js 원패스 서버 구동 명령을 작성합니다.
+                <div class="code-block">
+                  npx -y http-server . -o
+                </div>
+              </li>
+              <li>서버 구동과 동시에 브라우저가 실행되며 `http://localhost:8080` 포트로 완벽한 사운드와 함께 실행됩니다.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title"><i class="fa-solid fa-triangle-exclamation"></i> 오디오 자동재생 보안 정책 안내</div>
+          <p>브라우저 보안상 첫 사용자 인터랙션(보드 클릭 등)이 발생하기 전까지는 Web Audio API의 소리가 들리지 않도록 재생 차단(Autoplay Block)이 걸려있습니다. 바둑판에 첫 돌을 놓거나 화면을 한 번 이상 터치하시면 정상적으로 사운드가 들립니다.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>Premium Omok Game Manual & Guide | Designed and built by Antigravity Studio</p>
+      <p style="margin-top: 8px;">Copyright &copy; 2026. Hakhyun Kim. All rights reserved. <a href="index.html">돌아가기</a></p>
+    </footer>
+
+  </div>
+
+</body>
+</html>

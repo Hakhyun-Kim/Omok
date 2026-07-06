@@ -588,6 +588,13 @@ body {
 .control-btn.warning:hover {
   background: #ff3333;
 }
+.control-btn.info {
+  background: #2196f3;
+  color: white;
+}
+.control-btn.info:hover {
+  background: #0b7dda;
+}
 .control-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
